@@ -13,7 +13,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-class Subscription(BaseModel):
+class SubscriptionCreate(BaseModel):
     name: str
     cost: float
     renewal_date: date
