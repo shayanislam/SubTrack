@@ -19,3 +19,7 @@ subscriptions_db = []
 def add_subscription(subscription: Subscription):
     subscriptions_db.append(subscription)
     return {"message": "Subscription added", "data": subscription}
+
+@app.get("/subscriptions")
+def get_subscriptions():
+    return {"subscriptions": subscriptions_db}
