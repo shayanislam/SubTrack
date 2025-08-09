@@ -8,6 +8,10 @@ from models import Subscription
 from schemas import SubscriptionCreate, SubscriptionRead
 import crud  # <-- new
 
+from collections import defaultdict
+from sqlalchemy.orm import Session
+from models import Subscription
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -47,3 +51,24 @@ def delete_sub(sub_id: int, db: Session = Depends(get_db)):
     if not ok:
         raise HTTPException(status_code=404, detail="Subscription not found")
     return {"ok": True}
+
+def _monthly_cost(sub: Subscription) -> float:
+    # Treat annual as monthly/12; monthly stays as-is; anything else defaults to monthly
+    if (sub.frequency or "").lower().startswith("annual"):
+        return float(sub.cost) / 12.0
+    return float(sub.cost)
+
+@app.get("/summary")
+def get_summary(db: Session = Depends(get_db)):
+    subs = db.query(Subscription).all()
+    total = 0.0
+    by_cat = defaultdict(float)
+    for s in subs:
+        m = _monthly_cost(s)
+        total += m
+        by_cat[(s.category or "Uncategorized")] += m
+    return {
+        "total_monthly": total,
+        "by_category": dict(by_cat),
+        "count": len(subs),
+    }
