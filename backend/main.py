@@ -1,26 +1,24 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-from typing import Optional
-from datetime import date
-from database import Base, engine
-from models import Subscription
-from fastapi import Depends
+# backend/main.py
+from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from database import SessionLocal
+
+from database import Base, engine, SessionLocal
+from models import Subscription
+from schemas import SubscriptionCreate, SubscriptionRead
+import crud  # <-- new
 
 Base.metadata.create_all(bind=engine)
 
-
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-class SubscriptionCreate(BaseModel):
-    name: str
-    cost: float
-    renewal_date: date
-    frequency: str  # e.g., "monthly", "annually"
-    category: Optional[str] = "Uncategorized"  # AI can auto-fill this later
-
-# Dependency for DB session
 def get_db():
     db = SessionLocal()
     try:
@@ -28,16 +26,24 @@ def get_db():
     finally:
         db.close()
 
-@app.post("/subscriptions")
-def add_subscription(subscription: SubscriptionCreate, db: Session = Depends(get_db)):
-    db_subscription = Subscription(**subscription.dict())
-    db.add(db_subscription)
-    db.commit()
-    db.refresh(db_subscription)
-    return db_subscription
+@app.post("/subscriptions", response_model=SubscriptionRead)
+def add_subscription(payload: SubscriptionCreate, db: Session = Depends(get_db)):
+    return crud.create_subscription(db, payload)
 
-@app.get("/subscriptions")
+@app.get("/subscriptions", response_model=list[SubscriptionRead])
 def get_subscriptions(db: Session = Depends(get_db)):
-    subscriptions = db.query(Subscription).all()
-    return subscriptions
+    return crud.list_subscriptions(db)
 
+@app.put("/subscriptions/{sub_id}", response_model=SubscriptionRead)
+def update_sub(sub_id: int, payload: SubscriptionCreate, db: Session = Depends(get_db)):
+    updated = crud.update_subscription(db, sub_id, payload)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+    return updated
+
+@app.delete("/subscriptions/{sub_id}")
+def delete_sub(sub_id: int, db: Session = Depends(get_db)):
+    ok = crud.delete_subscription(db, sub_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+    return {"ok": True}
