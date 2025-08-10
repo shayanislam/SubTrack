@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link, Navigate } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "./firebase";
+import { Box, Flex, Heading, Spacer, Button, HStack } from "@chakra-ui/react";
 
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import ProtectedRoute from "./ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
+import ProtectedRoute from "./ProtectedRoute";
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -14,22 +15,27 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <header style={{ padding: "1rem", display: "flex", justifyContent: "space-between" }}>
-        <Link to="/" style={{ textDecoration: "none", fontWeight: 700 }}>SubTrack</Link>
-        {user ? (
-          <button onClick={() => signOut(auth)}>Sign out</button>
-        ) : (
-          <nav style={{ display: "flex", gap: 8 }}>
-            <Link to="/login">Log in</Link>
-            <Link to="/signup">Sign up</Link>
-          </nav>
-        )}
-      </header>
+      <Box as="header" p={4} borderBottom="1px solid #eee" bg="white">
+        <Flex align="center" maxW="6xl" mx="auto">
+          <Heading size="md"><Link to="/">SubTrack</Link></Heading>
+          <Spacer />
+          {user ? (
+            <HStack spacing={3}>
+              <Button size="sm" onClick={() => signOut(auth)}>Sign out</Button>
+            </HStack>
+          ) : (
+            <HStack spacing={3}>
+              <Button as={Link} to="/login" size="sm" variant="outline">Log in</Button>
+              <Button as={Link} to="/signup" size="sm" colorScheme="blue">Sign up</Button>
+            </HStack>
+          )}
+        </Flex>
+      </Box>
 
       <Routes>
-        <Route path="/" element={<div style={{ padding: 24 }}><h2>Welcome to SubTrack</h2></div>} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route path="/" element={<Navigate to={user ? "/app" : "/login"} replace />} />
+        <Route path="/login" element={user ? <Navigate to="/app" replace /> : <Login />} />
+        <Route path="/signup" element={user ? <Navigate to="/app" replace /> : <Signup />} />
         <Route
           path="/app"
           element={
@@ -38,6 +44,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

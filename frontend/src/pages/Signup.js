@@ -1,8 +1,8 @@
-// src/pages/Signup.js
 import React, { useState } from "react";
-import { auth } from "../firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { useNavigate, Link } from "react-router-dom";
+import { auth } from "../firebase";
+import { Box, Button, Heading, Input, Link as ChakraLink, VStack, Text } from "@chakra-ui/react";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Signup() {
   const [email, setEmail] = useState("");
@@ -22,17 +22,18 @@ export default function Signup() {
   };
 
   return (
-    <div style={{ padding: 24 }}>
-      <h2>Create account</h2>
-      {err && <div style={{ color: "crimson" }}>{err}</div>}
-      <form onSubmit={onSubmit} style={{ display: "grid", gap: 8, maxWidth: 320 }}>
-        <input placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input placeholder="Password" type="password" value={pw} onChange={(e) => setPw(e.target.value)} />
-        <button type="submit">Sign up</button>
-      </form>
-      <div style={{ marginTop: 8 }}>
-        Have an account? <Link to="/login">Log in</Link>
-      </div>
-    </div>
+    <Box maxW="md" mx="auto" mt={10} p={6} borderWidth="1px" borderRadius="lg" bg="white">
+      <Heading size="lg" mb={4}>Create account</Heading>
+      {err && <Text color="red.500" mb={2}>{err}</Text>}
+      <VStack as="form" onSubmit={onSubmit} spacing={3} align="stretch">
+        <Input placeholder="Email" type="email" value={email} onChange={(e)=>setEmail(e.target.value)} required />
+        <Input placeholder="Password" type="password" value={pw} onChange={(e)=>setPw(e.target.value)} required />
+        <Button type="submit" colorScheme="blue">Sign up</Button>
+      </VStack>
+      <Text mt={3}>
+        Have an account?{" "}
+        <ChakraLink as={Link} to="/login" color="blue.500">Log in</ChakraLink>
+      </Text>
+    </Box>
   );
 }
